@@ -23,3 +23,4 @@ endif()
 file(GLOB SOURCES "src/*.cpp")
 
 add_executable(ChatExecutable ${SOURCES})
+target_link_libraries(ChatExecutable PRIVATE Curses::Curses)

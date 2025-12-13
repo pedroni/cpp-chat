@@ -1,7 +1,7 @@
 #include "chat.h"
 #include <chrono>
-#include <functional>
 #include <iostream>
+#include <ncurses.h>
 #include <string>
 #include <thread>
 
@@ -30,17 +30,45 @@ void renderChat(const Chat &chat) {
 }
 
 int main() {
-  cout << "=========== CHAT ===========" << endl;
+  // clears the screen and presents a virtual screen
+  initscr();
 
-  Chat chat;
+  // enables capturing input by input without having to wait the user to press
+  // enter, pressing enter to get input is the default from std::cin
+  // raw();
 
-  thread input{readInput, ref(chat)};
-  thread renderer{renderChat, ref(chat)};
+  // with the default c++ behavior everytime we type something on the terminal
+  // using std::cin we would see the output of the keys that are pressed, this
+  // hides whatever key is pressed
+  noecho();
 
-  // join in threads works in similar fashion as an await in javascript
-  input.join();
-  renderer.join();
+  // works just like printf, but writing to curse screen
 
-  cout << "======== CHAT ENDED ========" << endl;
+  // mvprintw moves characters positioning on the screen
+  mvprintw(0, 5, "=========== CHAT ===========\n");
+
+  // actually prints the stuff on the curse screen, you should do as many
+  // things as possible and then call refresh to render it
+  refresh();
+
+  // get input
+  // https://tldp.org/HOWTO/NCURSES-Programming-HOWTO/scanw.html
+  refresh();
+  getch();
+  printw("========= END CHAT =========\n");
+
+  getch();
+  // ends the program, this goes back to the original terminal output, and frees
+  // the memory allocated by ncurse
+  endwin();
+
+  // Chat chat;
+
+  // thread input{readInput, ref(chat)};
+  // thread renderer{renderChat, ref(chat)};
+
+  // // join in threads works in similar fashion as an await in javascript
+  // input.join();
+  // renderer.join();
   return 0;
 }
