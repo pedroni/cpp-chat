@@ -1,5 +1,6 @@
 #include "chat.h"
 #include <iostream>
+#include <ncurses.h>
 #include <string>
 
 using namespace std;
@@ -8,7 +9,7 @@ void Chat::join(string username) { _username = username; }
 
 void Chat::render() const {
   // the fuck. i would never be able to come up with this
-  std::cout << "\033[2J\033[H"; // clears the screen before redrawing
+
   // everytime
 
   if (Chat::_username == "") {
@@ -16,6 +17,7 @@ void Chat::render() const {
   } else {
     cout << "Welcome, " << _username << endl;
   }
+  refresh();
 }
 
 void Chat::handleInput(string input) {

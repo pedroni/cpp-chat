@@ -35,6 +35,7 @@ int main() {
 
   // enables capturing input by input without having to wait the user to press
   // enter, pressing enter to get input is the default from std::cin
+  // cbreak();
   // raw();
 
   // with the default c++ behavior everytime we type something on the terminal
@@ -52,6 +53,12 @@ int main() {
   refresh();
 
   // get input
+  char str[90];
+  // getstr reads a line
+  // where as getch reads a single character based of cbreak()
+  getstr(str);
+  printw("You typed %s", str);
+
   // https://tldp.org/HOWTO/NCURSES-Programming-HOWTO/scanw.html
   refresh();
   getch();
