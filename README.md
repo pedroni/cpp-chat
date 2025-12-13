@@ -2,17 +2,26 @@
 
 A simple terminal chat application
 
-## How does it work?
+## Running the application
+
+Install `vcpkg` set `export VCPKG_ROOT="$HOME/vcpkg"` to your `~/.zshrc` or equivalent (PATH variables/global environment variables).
+
+## Dependencies
+
+- cmake (similar to vite)
+- vcpkg (similar to npm)
+- ncurses
+- fmt
 
 To handle terminal input and rendering we're using C++11 threads feature as well as `ncurses`. One to listen for input, and one to render to the screen.
+
+### ncurses
 
 I've also added `ncurses` requirement to the `CMakeLists.txt` to facilitate how terminal is handled. Without that I noticed that I was going into a dark path of copy pasting code that I had no idea what were doing. For more information please visit:
 
 - https://tldp.org/HOWTO/NCURSES-Programming-HOWTO/intro.html#WHATIS
 - https://cmake.org/cmake/help/latest/module/FindCurses.html
 
-## CMake
+### fmt
 
-### vcpkg
-
-This project is using `vcpkg` to properly use it, you have to install it and set `export VCPKG_ROOT="$HOME/vcpkg"` to your `~/.zshrc` or equivalent (PATH variables/global environment variables).
+`fmt` is being used to facilited concatenating strings in an easy way. In C++20 `std::format` was introduced. But I prefer to use older things as I assume these are more commonly used in the job market.

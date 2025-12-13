@@ -1,18 +1,20 @@
 #include "chat.h"
+#include "utils/rand.h"
 #include <_stdlib.h>
-#include <iostream>
+#include <fmt/printf.h>
 #include <ncurses.h>
-#include <stdexcept>
 #include <string>
+#include <vector>
 
 using namespace std;
 
 void Chat::join(string username) {
   _username = username;
 
-  string welcomeMessage = _welcomeMessages.at(rand() % _welcomeMessages.size());
+  string welcomeMessage =
+      _welcomeMessages.at(Rand::generate(0, _welcomeMessages.size()));
 
-  _messages.push_back(welcomeMessage);
+  _messages.push_back(fmt::sprintf(welcomeMessage, username));
 }
 
 void Chat::render() const {
@@ -43,16 +45,30 @@ void Chat::handleInput() {
     return;
   }
 
-  if (Chat::_username == "") {
-
-    Chat::join(input);
-
+  if (input == "/restart") {
+    Chat::restart();
     return;
   }
+
+  if (Chat::_username == "") {
+    Chat::join(input);
+    return;
+  }
+
+  Chat::sendMessage(input);
 }
 
 void Chat::renderMessages() const {
   for (auto message : _messages) {
     printw("%s\n", message.c_str());
   }
+}
+
+void Chat::restart() {
+  _username = "";
+  _messages = vector<string>();
+}
+
+void Chat::sendMessage(string message) {
+  _messages.push_back(fmt::sprintf("%s: %s", _username, message));
 }
