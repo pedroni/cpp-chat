@@ -1,0 +1,17 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "generate build",
+      "type": "shell",
+      "command": "cmake -S . -B build",
+      "problemMatcher": ["cpp"]
+    },
+    {
+      "label": "run",
+      "type": "shell",
+      "command": "cmake --build build && ./build/ChatExecutable",
+      "problemMatcher": ["cpp"]
+    }
+  ]
+}
