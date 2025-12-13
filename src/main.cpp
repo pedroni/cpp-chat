@@ -8,15 +8,20 @@
 using namespace std;
 
 void readInput(Chat &chat) {
+  char rawInput;
   string input;
-  while (chat.isRunning() && getline(cin, input)) {
+  while (chat.isRunning() && cin.get(rawInput)) {
+    input += rawInput;
+
+    cout << "The raw input" << endl;
     chat.handleInput(input);
+    input = "";
   }
 }
 
 void renderChat(const Chat &chat) {
   while (chat.isRunning()) {
-    cout << "rendering the chat..." << endl;
+    chat.render();
 
     // runs the chat at roughly 5fps, we don't need more than that, 200ms per
     // frame, 5 frames in a second
@@ -32,8 +37,9 @@ int main() {
   thread input{readInput, ref(chat)};
   thread renderer{renderChat, ref(chat)};
 
+  // join in threads works in similar fashion as an await in javascript
   input.join();
-  renderer.detach();
+  renderer.join();
 
   cout << "======== CHAT ENDED ========" << endl;
   return 0;
