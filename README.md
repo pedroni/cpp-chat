@@ -10,3 +10,9 @@ I've also added `ncurses` requirement to the `CMakeLists.txt` to facilitate how 
 
 - https://tldp.org/HOWTO/NCURSES-Programming-HOWTO/intro.html#WHATIS
 - https://cmake.org/cmake/help/latest/module/FindCurses.html
+
+## CMake
+
+### vcpkg
+
+This project is using `vcpkg` to properly use it, you have to install it and set `export VCPKG_ROOT="$HOME/vcpkg"` to your `~/.zshrc` or equivalent (PATH variables/global environment variables).

@@ -43,3 +43,4 @@
 # cmake, clangd
 build
 .cache
+vcpkg_installed

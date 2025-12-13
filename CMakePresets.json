@@ -2,10 +2,18 @@
   "version": 4,
   "configurePresets": [
     {
+      "name": "vcpkg",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+      }
+    },
+    {
       "name": "default",
+      "inherits": "vcpkg",
       "displayName": "Default",
       "description": "Default presets with exporting compile commands to improve IDE support with LSPs such as clangd",
-      "binaryDir": "${sourceDir}/build",
+
       "cacheVariables": {
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       }

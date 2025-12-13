@@ -1,5 +1,6 @@
 #include "chat.h"
 #include <chrono>
+#include <fmt/printf.h>
 #include <iostream>
 #include <ncurses.h>
 #include <thread>
@@ -9,6 +10,7 @@ using namespace std;
 void readInput(Chat &chat) {
   while (chat.isRunning()) {
     chat.currentCh = getch();
+
     switch ((int)chat.currentCh) {
     case 10:
       chat.handleInput();
