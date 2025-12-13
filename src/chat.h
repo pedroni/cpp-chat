@@ -12,6 +12,9 @@ private:
   vector<string> messages;
 
 public:
+  string input;
+  char currentCh;
+
   Chat() {
     messages.push_back("Look who's here—{Name}!");
     messages.push_back("{Name} has entered the chat.");
@@ -32,7 +35,7 @@ public:
 
   void join(string username);
 
-  void handleInput(string input);
+  void handleInput();
 
   void render() const;
 

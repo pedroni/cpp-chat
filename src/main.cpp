@@ -2,30 +2,34 @@
 #include <chrono>
 #include <iostream>
 #include <ncurses.h>
-#include <string>
 #include <thread>
 
 using namespace std;
 
 void readInput(Chat &chat) {
-  char rawInput;
-  string input;
-  while (chat.isRunning() && cin.get(rawInput)) {
-    input += rawInput;
-
-    cout << "The raw input" << endl;
-    chat.handleInput(input);
-    input = "";
+  while (chat.isRunning()) {
+    chat.currentCh = getch();
+    switch ((int)chat.currentCh) {
+    case 10:
+      chat.handleInput();
+      chat.input = "";
+      break;
+    default:
+      chat.input += chat.currentCh;
+      break;
+    }
   }
 }
 
 void renderChat(const Chat &chat) {
+  constexpr int fps = 240;
+  constexpr int msPerFrame = 1000 / fps;
+
   while (chat.isRunning()) {
     chat.render();
 
-    // runs the chat at roughly 5fps, we don't need more than that, 200ms per
-    // frame, 5 frames in a second
-    this_thread::sleep_for(chrono::milliseconds(200));
+    // fakes running at specific timestep
+    this_thread::sleep_for(chrono::milliseconds(msPerFrame));
   }
 }
 
@@ -33,49 +37,30 @@ int main() {
   // clears the screen and presents a virtual screen
   initscr();
 
-  // enables capturing input by input without having to wait the user to press
-  // enter, pressing enter to get input is the default from std::cin
-  // cbreak();
-  // raw();
-
   // with the default c++ behavior everytime we type something on the terminal
   // using std::cin we would see the output of the keys that are pressed, this
   // hides whatever key is pressed
   noecho();
 
-  // works just like printf, but writing to curse screen
+  // enables special keys to be used with constant KEY_ENTER for example, this
+  // also enables the usage of F1, F2 keys
+  // dunno? didnt work with KEY_ENTER had to use int(10)
+  keypad(stdscr, true);
 
-  // mvprintw moves characters positioning on the screen
-  mvprintw(0, 5, "=========== CHAT ===========\n");
+  Chat chat;
 
-  // actually prints the stuff on the curse screen, you should do as many
-  // things as possible and then call refresh to render it
-  refresh();
+  thread input{readInput, ref(chat)};
+  thread renderer{renderChat, ref(chat)};
 
-  // get input
-  char str[90];
-  // getstr reads a line
-  // where as getch reads a single character based of cbreak()
-  getstr(str);
-  printw("You typed %s", str);
+  // join in threads works in similar fashion as an await in javascript
+  input.join();
+  renderer.join();
 
-  // https://tldp.org/HOWTO/NCURSES-Programming-HOWTO/scanw.html
-  refresh();
-  getch();
-  printw("========= END CHAT =========\n");
-
-  getch();
   // ends the program, this goes back to the original terminal output, and frees
   // the memory allocated by ncurse
   endwin();
 
-  // Chat chat;
+  std::cout << "Sad to see you go!" << std::endl;
 
-  // thread input{readInput, ref(chat)};
-  // thread renderer{renderChat, ref(chat)};
-
-  // // join in threads works in similar fashion as an await in javascript
-  // input.join();
-  // renderer.join();
   return 0;
 }
