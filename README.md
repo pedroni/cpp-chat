@@ -25,3 +25,9 @@ I've also added `ncurses` requirement to the `CMakeLists.txt` to facilitate how 
 ### fmt
 
 `fmt` is being used to facilited concatenating strings in an easy way. In C++20 `std::format` was introduced. But I prefer to use older things as I assume these are more commonly used in the job market.
+
+## Learning Resources
+
+- NCURSES Programming HOWTO: https://tldp.org/HOWTO/pdf/NCURSES-Programming-HOWTO.pdf
+- Beej’s Guide to Network Programming:
+  https://beej.us/guide/bgnet

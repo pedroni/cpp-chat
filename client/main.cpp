@@ -3,6 +3,9 @@
 #include <fmt/printf.h>
 #include <iostream>
 #include <ncurses.h>
+#include <netdb.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #include <thread>
 
 using namespace std;
@@ -36,6 +39,28 @@ void renderChat(const Chat &chat) {
 }
 
 int main() {
+  std::cout << "we dont have anything do we?" << std::endl;
+
+  int status;
+  struct addrinfo hints;
+  struct addrinfo *servinfo;
+
+  // make sure hints is empty, when initializing structs it fills with garbage
+  // data
+  memset(&hints, 0, sizeof hints);
+
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_STREAM;
+  hints.ai_flags = AI_PASSIVE;
+
+  // getaddrinfo();
+
+  return 0;
+  // ACTUAL CHAT CODE
+  // ACTUAL CHAT CODE
+  // ACTUAL CHAT CODE
+  // ACTUAL CHAT CODE
+
   // clears the screen and presents a virtual screen
   initscr();
 
