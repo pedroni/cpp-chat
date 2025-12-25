@@ -35,7 +35,7 @@ void renderChat(const Chat &chat) {
   }
 }
 
-int main() {
+int main_chat() {
   // clears the screen and presents a virtual screen
   initscr();
 

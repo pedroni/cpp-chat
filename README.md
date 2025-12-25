@@ -29,5 +29,4 @@ I've also added `ncurses` requirement to the `CMakeLists.txt` to facilitate how 
 ## Learning Resources
 
 - NCURSES Programming HOWTO: https://tldp.org/HOWTO/pdf/NCURSES-Programming-HOWTO.pdf
-- Beej’s Guide to Network Programming:
-  https://beej.us/guide/bgnet
+- Beej’s Guide to Network Programming: https://beej.us/guide/bgnet

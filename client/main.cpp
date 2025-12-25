@@ -80,6 +80,12 @@ int main(int argc, char *argv[]) {
 
   printf("Connected to %s\n", humanIpAddress);
 
+  const char *message = "A message from the client";
+  if (send(sockfd, message, strlen(message), 0) == -1) {
+    printf("Failed to send\n");
+  }
+
+  printf("Now we want to receive it back\n");
   numbytes = recv(sockfd, buff, MAX_BYTES - 1, 0);
   if (numbytes == -1) {
     perror("Failed to recv");
@@ -88,7 +94,8 @@ int main(int argc, char *argv[]) {
 
   buff[numbytes] = '\0';
 
-  printf("Received message: %s\n", buff);
+  printf("I received it back: %s\n", buff);
+
   close(sockfd);
   exit(0);
 }

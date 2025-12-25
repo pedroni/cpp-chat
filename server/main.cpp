@@ -3,6 +3,8 @@
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
+#include <fmt/printf.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -11,9 +13,11 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <vector>
 
 #define PORT "3490"
 #define BACKLOG 10
+#define MAX_BYTES 100
 
 void sigchld_handler(int s) {
   (void)s;
@@ -116,6 +120,9 @@ int main() {
   socklen_t sin_size;
   char s[INET6_ADDRSTRLEN];
 
+  std::vector<int> clientsfd;
+  std::vector<char> messages;
+
   // main connect loop, wait for connections?
   while (1) {
     sin_size = sizeof their_addr;
@@ -129,25 +136,59 @@ int main() {
               s, sizeof s);
     printf("server: got connection from %s\n", s);
 
+    clientsfd.push_back(newfd);
+
     // fork returns 0 when we succesfully create a child process.
     // it's also 0 when we're in the child process
     // for the parent it will have returned the process id (pid)
     // on error returns -1
     if (!fork()) {
       // in here we're the child process
-      close(sockfd); // child doesn't need the listener, it will only send
-                     // events from now on
-      if (send(newfd, "Hello World", 11, 0) == -1) {
-        perror("failed to send");
+      // close(sockfd); // child doesn't need the listener, it will only send
+      // events from now on
+      unsigned int count = 0;
+      unsigned int numbytes = 0;
+      char buff[MAX_BYTES];
+
+      while (1) {
+        count++;
+
+        numbytes = recv(newfd, buff, MAX_BYTES - 1, 0);
+        if (numbytes == -1) {
+          perror("Failed to recv");
+          exit(1);
+        }
+
+        if (numbytes > 0) {
+          buff[numbytes] = '\0';
+          printf("Received message: %s\n Forwarding...\n", buff);
+          messages.push_back(buff[numbytes]);
+        }
       }
-      printf("sent message");
+
+      printf("closing connection");
       close(newfd); // close child
       exit(0); // exit process with empty 0, successfull!, this only exits the
                // child process? thats odd. but i guess its alright. so what
                // happens if we return 0? i think we wont stop the main process
     } else {
+      while (1) {
+        if (messages.size() > 0) {
+          printf("we have messages to send over\n");
+          for (int clientfd : clientsfd) {
+            char *message = &messages.at(messages.size() - 1);
+            if (send(clientfd, message, strlen(message), 0) == -1) {
+              perror("Failed to send");
+            }
+            messages.pop_back();
+          }
+          // messages.at(0);
+        }
+      }
+
       // in here we're on the parent process
-      close(newfd); // the parent doesnt care about the child anymore
+      // close(newfd); // the parent doesnt care about the child anymore
+      // maybe we do care when sending from the server to multiple clients.
     }
   }
 
