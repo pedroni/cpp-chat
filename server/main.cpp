@@ -144,7 +144,7 @@ int new_poll(std::vector<pollfd> &pollfds, int sockfd) {
 void broadcast_message(int sockfd, std::vector<pollfd> &pollfds,
                        unsigned long &i) {
   char buf[256];
-  int numbytes = recv(pollfds[1].fd, buf, sizeof(buf), 0);
+  int numbytes = recv(pollfds[i].fd, buf, sizeof(buf), 0);
 
   if (numbytes == -1) {
     perror("failed to receive: ");
@@ -163,7 +163,7 @@ void broadcast_message(int sockfd, std::vector<pollfd> &pollfds,
       remove_poll(pollfds, i);
       continue;
     } else {
-      printf("sent.\n");
+      printf("Sent: %s\n", buf);
     }
   }
 }
