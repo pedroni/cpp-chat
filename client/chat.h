@@ -1,8 +1,19 @@
 #pragma once
 
+#include <arpa/inet.h>
+#include <cstring>
+#include <fmt/printf.h>
+#include <netdb.h>
+#include <netinet/in.h>
 #include <string>
+#include <sys/socket.h>
+#include <unistd.h>
 #include <vector>
+
 using namespace std;
+
+#define HOST "localhost"
+#define PORT "3490"
 
 class Chat {
 private:
@@ -11,6 +22,10 @@ private:
 
   vector<string> _welcomeMessages;
   vector<string> _messages;
+
+  int _sockfd = -1;
+
+  bool connect();
 
 public:
   string input;
@@ -47,4 +62,8 @@ public:
   bool isRunning() const { return _running; };
 
   void stopRunning() { _running = false; }
+
+  bool connected() const { return _sockfd != -1; };
+
+  void subscribe();
 };

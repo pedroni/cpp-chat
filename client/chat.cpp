@@ -1,20 +1,108 @@
 #include "chat.h"
 #include "utils/rand.h"
 #include <_stdlib.h>
+#include <cstring>
 #include <fmt/printf.h>
 #include <ncurses.h>
 #include <string>
+#include <sys/socket.h>
+#include <unistd.h>
 #include <vector>
 
 using namespace std;
 
+std::string inet_ntop2(void *addr) {
+  char presentable[INET6_ADDRSTRLEN];
+
+  struct sockaddr_storage *sas = (struct sockaddr_storage *)addr;
+  struct sockaddr_in *sa4;
+  struct sockaddr_in6 *sa6;
+  void *src;
+
+  switch (sas->ss_family) {
+  case AF_INET:
+    sa4 = (struct sockaddr_in *)addr;
+    src = &(sa4->sin_addr);
+    break;
+  case AF_INET6:
+    sa6 = (struct sockaddr_in6 *)addr;
+    src = &(sa6->sin6_addr);
+    break;
+  default:
+    return "";
+  }
+
+  inet_ntop(sas->ss_family, src, presentable, INET6_ADDRSTRLEN);
+
+  return presentable;
+}
+
+bool Chat::connect() {
+  int tempSockFd;
+
+  struct addrinfo hints, *servinfo, *p;
+  memset(&hints, 0, sizeof hints);
+  hints.ai_family = AF_INET;
+  hints.ai_socktype = SOCK_STREAM;
+
+  int rv = getaddrinfo(HOST, PORT, &hints, &servinfo);
+  if (rv != 0) {
+    _messages.push_back(fmt::sprintf("getaddrinfo: %s\n", gai_strerror(rv)));
+    return false;
+  }
+
+  int yes = 1;
+  p = servinfo;
+
+  // this loop will look through all of the items in the servinfo linked list
+  // until it can find an addrinfo that it can BIND to, once it founds it
+  // breaks out of the loop
+  for (p = servinfo; p != NULL; p = p->ai_next) {
+    tempSockFd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+    if (tempSockFd == -1) {
+      _messages.push_back(
+          fmt::sprintf("failed to socket: %s\n", strerror(errno)));
+      continue;
+    }
+
+    if (::connect(tempSockFd, p->ai_addr, p->ai_addrlen) == -1) {
+      _messages.push_back(
+          fmt::sprintf("failed to connect: %s\n", strerror(errno)));
+      continue;
+    }
+    break;
+  }
+
+  // if there's noting on our pointer from the linked list we have to break
+  // out of the loop
+  if (p == NULL) {
+    _messages.push_back(
+        fmt::sprintf("failed to make a proper connection to hostname: %s\n",
+                     strerror(errno)));
+
+    freeaddrinfo(servinfo);
+    return false;
+  }
+
+  _messages.push_back(
+      fmt::sprintf("Connection established with %s", inet_ntop2(p->ai_addr)));
+
+  // assign the sock fd once connection is properly stabilished
+  _sockfd = tempSockFd;
+
+  freeaddrinfo(servinfo);
+  return true;
+}
+
 void Chat::join(string username) {
   _username = username;
 
-  string welcomeMessage =
-      _welcomeMessages.at(Rand::generate(0, _welcomeMessages.size()));
+  if (connect()) {
+    string welcomeMessage =
+        _welcomeMessages.at(Rand::generate(0, _welcomeMessages.size()));
 
-  _messages.push_back(fmt::sprintf(welcomeMessage, username));
+    _messages.push_back(fmt::sprintf(welcomeMessage, username));
+  }
 }
 
 void Chat::render() const {
@@ -24,7 +112,7 @@ void Chat::render() const {
   printw("=========== CHAT =========== (%d) \n", currentCh);
 
   if (Chat::_username == "") {
-    printw("How can we call you?");
+    printw("How can we call you?\n");
   } else {
     renderMessages();
   }
@@ -67,8 +155,41 @@ void Chat::renderMessages() const {
 void Chat::restart() {
   _username = "";
   _messages = vector<string>();
+
+  close(_sockfd);
+  _sockfd = -1;
 }
 
 void Chat::sendMessage(string message) {
-  _messages.push_back(fmt::sprintf("%s: %s", _username, message));
+  string newMessage = fmt::sprintf("%s: %s", _username, message);
+  _messages.push_back(newMessage);
+
+  if (send(_sockfd, newMessage.c_str(), newMessage.size(), 0) == -1) {
+    _messages.push_back(
+        fmt::sprintf("failed to send message %s", strerror(errno)));
+    // todo
+    _messages.push_back("DEBUG: Should close connection and reconnect.");
+  }
+}
+
+void Chat::subscribe() {
+  if (!connected()) {
+    return;
+  }
+
+  char buf[256];
+  int numBytes = recv(_sockfd, buf, 256, 0);
+  if (numBytes == -1) {
+    _messages.push_back(
+        fmt::sprintf("failed to recv message %s", strerror(errno)));
+    // todo
+    _messages.push_back("DEBUG: Should close connection and reconnect.");
+    return;
+  }
+
+  if (numBytes > 0) {
+    buf[numBytes] = '\0';
+    std::string newMessage(buf);
+    _messages.push_back(newMessage);
+  }
 }

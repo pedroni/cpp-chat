@@ -1,4 +1,3 @@
-
 #include "chat.h"
 #include <chrono>
 #include <fmt/printf.h>
@@ -7,6 +6,12 @@
 #include <thread>
 
 using namespace std;
+
+void subscribe(Chat &chat) {
+  while (chat.isRunning()) {
+    chat.subscribe();
+  }
+}
 
 void readInput(Chat &chat) {
   while (chat.isRunning()) {
@@ -53,10 +58,12 @@ int main() {
   Chat chat;
 
   thread input{readInput, ref(chat)};
+  thread listener{subscribe, ref(chat)};
   thread renderer{renderChat, ref(chat)};
 
   // join in threads works in similar fashion as an await in javascript
   input.join();
+  listener.join();
   renderer.join();
 
   // ends the program, this goes back to the original terminal output, and frees
