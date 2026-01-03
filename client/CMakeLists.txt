@@ -2,6 +2,8 @@ file(GLOB SOURCES "*.cpp" "utils/*.cpp")
 
 add_executable(ChatClient ${SOURCES})
 
+target_link_libraries(ChatClient PRIVATE common)
+
 # CURSES for terminal management
 # https://cmake.org/cmake/help/latest/module/FindCurses.html
 set(CURSES_NEED_NCURSES TRUE)

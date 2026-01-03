@@ -1,19 +1,14 @@
+#include "globals.h"
+#include "rand.h"
 #include <arpa/inet.h>
-#include <cerrno>
-#include <csignal>
 #include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <fmt/printf.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <poll.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/poll.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
 
@@ -124,6 +119,10 @@ int new_poll(std::vector<pollfd> &pollfds, int sockfd) {
   socklen_t addrlen = sizeof remoteaddr;
 
   // Newly accept()ed socket descriptor
+  // if we don't care about the client IP address we can pass NULL as the second
+  // parameter and NULL as the third parameter. we could then look up the
+  // client's IP address with getpeername, which receives the same arguments,
+  // except the first argument is now the newfd and not the sockfd
   int newfd = accept(sockfd, (struct sockaddr *)&remoteaddr, &addrlen);
 
   if (newfd == -1) {
@@ -152,7 +151,9 @@ void broadcast_message(int sockfd, std::vector<pollfd> &pollfds,
     return;
   }
 
-  for (pollfd poll : pollfds) {
+  // todo: use ranged based to properly remove the client that failed to send to
+  for (u64 k = 0; pollfds.size(); k++) {
+    pollfd poll = pollfds[k];
     // avoid sending to the same client and to ourselves
     if (poll.fd == sockfd || poll.fd == pollfds[i].fd) {
       continue;
@@ -160,7 +161,7 @@ void broadcast_message(int sockfd, std::vector<pollfd> &pollfds,
 
     if (send(poll.fd, buf, numbytes, 0) == -1) {
       perror("failed to send: ");
-      remove_poll(pollfds, i);
+      remove_poll(pollfds, k);
       continue;
     } else {
       printf("Sent: %s\n", buf);
@@ -182,6 +183,7 @@ int main() {
   pollfds.push_back({sockfd, POLLIN, 0});
 
   printf("Waiting for connections...\n");
+  printf("waiting a random %d\n", Rand::generate());
 
   // main connect loop, wait for connections?
   while (1) {

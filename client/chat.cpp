@@ -1,5 +1,5 @@
 #include "chat.h"
-#include "utils/rand.h"
+#include "rand.h"
 #include <_stdlib.h>
 #include <cstring>
 #include <fmt/printf.h>
