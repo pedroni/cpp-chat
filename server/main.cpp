@@ -142,6 +142,7 @@ int new_poll(std::vector<pollfd> &pollfds, int sockfd) {
  */
 void broadcast_message(int sockfd, std::vector<pollfd> &pollfds,
                        unsigned long &i) {
+  pollfd actorfd = pollfds.at(i);
   char buf[256];
   int numbytes = recv(pollfds[i].fd, buf, sizeof(buf), 0);
 
@@ -150,6 +151,7 @@ void broadcast_message(int sockfd, std::vector<pollfd> &pollfds,
     remove_poll(pollfds, i);
     return;
   }
+
   if (numbytes == 0) {
     // do nothing there's no bytes
     return;
@@ -159,14 +161,14 @@ void broadcast_message(int sockfd, std::vector<pollfd> &pollfds,
   buf[numbytes] = '\0';
   printf("Received: %s\n", buf);
 
-  for (u64 k = 0; pollfds.size(); k++) {
-    pollfd poll = pollfds[k];
+  for (u64 k = 0; k < pollfds.size(); k++) {
+    pollfd poll = pollfds.at(k);
     // avoid sending to the same client and to ourselves
-    if (poll.fd == sockfd || poll.fd == pollfds[i].fd) {
+    if (poll.fd == sockfd || poll.fd == actorfd.fd) {
       continue;
     }
 
-    if (send(poll.fd, buf, numbytes - 1, 0) == -1) {
+    if (send(poll.fd, buf, numbytes, 0) == -1) {
       perror("failed to send: ");
       remove_poll(pollfds, k);
       continue;
