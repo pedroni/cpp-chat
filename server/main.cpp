@@ -149,6 +149,10 @@ void broadcast_message(int sockfd, std::vector<pollfd> &pollfds,
     perror("failed to receive: ");
     remove_poll(pollfds, i);
     return;
+  } else {
+    // delimit the message
+    buf[numbytes] = '\0';
+    printf("Received: %s\n", buf);
   }
 
   // todo: use ranged based to properly remove the client that failed to send to
