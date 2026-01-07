@@ -1,5 +1,7 @@
 #include "chat.h"
 #include <chrono>
+#include <clocale>
+#include <fmt/base.h>
 #include <fmt/printf.h>
 #include <iostream>
 #include <ncurses.h>
@@ -42,6 +44,7 @@ void renderChat(const Chat &chat) {
 }
 
 int main() {
+  setlocale(LC_ALL, "");
   // clears the screen and presents a virtual screen
   initscr();
 

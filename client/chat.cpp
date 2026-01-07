@@ -1,7 +1,10 @@
 #include "chat.h"
 #include "rand.h"
+#include "time.h"
+#include "time_util.h"
 #include <_stdlib.h>
 #include <cstring>
+#include <fmt/format.h>
 #include <fmt/printf.h>
 #include <ncurses.h>
 #include <string>
@@ -10,6 +13,7 @@
 #include <vector>
 
 using namespace std;
+using namespace std::chrono;
 
 std::string inet_ntop2(void *addr) {
   char presentable[INET6_ADDRSTRLEN];
@@ -37,8 +41,9 @@ std::string inet_ntop2(void *addr) {
   return presentable;
 }
 
-bool Chat::connect() {
+bool Chat::_connect() {
   int tempSockFd;
+  _connectionAttemptedAt = TimeUtil::now();
 
   struct addrinfo hints, *servinfo, *p;
   memset(&hints, 0, sizeof hints);
@@ -66,8 +71,6 @@ bool Chat::connect() {
     }
 
     if (::connect(tempSockFd, p->ai_addr, p->ai_addrlen) == -1) {
-      _messages.push_back(
-          fmt::sprintf("failed to connect: %s\n", strerror(errno)));
       continue;
     }
     break;
@@ -77,8 +80,7 @@ bool Chat::connect() {
   // out of the loop
   if (p == NULL) {
     _messages.push_back(
-        fmt::sprintf("failed to make a proper connection to hostname: %s\n",
-                     strerror(errno)));
+        fmt::sprintf("Failed to connect to hostname: %s\n", strerror(errno)));
 
     freeaddrinfo(servinfo);
     return false;
@@ -97,12 +99,15 @@ bool Chat::connect() {
 void Chat::join(string username) {
   _username = username;
 
-  if (connect()) {
+  if (_connect()) {
     string welcomeMessage =
         _welcomeMessages.at(Rand::generate(0, _welcomeMessages.size()));
 
     _messages.push_back(fmt::sprintf(welcomeMessage, username));
   }
+
+  // we only attempt to reconnect after joining
+  _shouldReconnect = true;
 }
 
 void Chat::render() const {
@@ -152,12 +157,16 @@ void Chat::renderMessages() const {
   }
 }
 
+void Chat::_disconnect() {
+  close(_sockfd);
+  _sockfd = -1;
+}
+
 void Chat::restart() {
   _username = "";
   _messages = vector<string>();
 
-  close(_sockfd);
-  _sockfd = -1;
+  _disconnect();
 }
 
 void Chat::sendMessage(string message) {
@@ -165,15 +174,31 @@ void Chat::sendMessage(string message) {
   _messages.push_back(newMessage);
 
   if (send(_sockfd, newMessage.c_str(), newMessage.size(), 0) == -1) {
-    _messages.push_back(
-        fmt::sprintf("failed to send message %s", strerror(errno)));
-    // todo
-    _messages.push_back("DEBUG: Should close connection and reconnect.");
+    _reconnect();
+    _messages.push_back(fmt::sprintf(
+        "failed to send message %s... reconnecting...", strerror(errno)));
+  }
+}
+
+// reconnect every 5 seconds
+void Chat::_reconnect() {
+  if (_username == "") {
+    // only attempt to reconnect with a user
+    return;
+  }
+  long long now = TimeUtil::now();
+
+  if (_connectionAttemptedAt == -1 || (now - _connectionAttemptedAt >= 5000)) {
+    _disconnect();
+
+    _messages.push_back(("Trying to reconnect..."));
+    _connect();
   }
 }
 
 void Chat::subscribe() {
   if (!connected()) {
+    _reconnect();
     return;
   }
 
@@ -182,8 +207,7 @@ void Chat::subscribe() {
   if (numBytes == -1) {
     _messages.push_back(
         fmt::sprintf("failed to recv message %s", strerror(errno)));
-    // todo
-    _messages.push_back("DEBUG: Should close connection and reconnect.");
+    _reconnect();
     return;
   }
 

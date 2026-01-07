@@ -149,13 +149,16 @@ void broadcast_message(int sockfd, std::vector<pollfd> &pollfds,
     perror("failed to receive: ");
     remove_poll(pollfds, i);
     return;
-  } else {
-    // delimit the message
-    buf[numbytes] = '\0';
-    printf("Received: %s\n", buf);
+  }
+  if (numbytes == 0) {
+    // do nothing there's no bytes
+    return;
   }
 
-  // todo: use ranged based to properly remove the client that failed to send to
+  // delimit the message
+  buf[numbytes] = '\0';
+  printf("Received: %s\n", buf);
+
   for (u64 k = 0; pollfds.size(); k++) {
     pollfd poll = pollfds[k];
     // avoid sending to the same client and to ourselves
@@ -163,7 +166,7 @@ void broadcast_message(int sockfd, std::vector<pollfd> &pollfds,
       continue;
     }
 
-    if (send(poll.fd, buf, numbytes, 0) == -1) {
+    if (send(poll.fd, buf, numbytes - 1, 0) == -1) {
       perror("failed to send: ");
       remove_poll(pollfds, k);
       continue;
@@ -174,6 +177,7 @@ void broadcast_message(int sockfd, std::vector<pollfd> &pollfds,
 }
 
 int main() {
+  setlocale(LC_ALL, "");
 
   int sockfd = get_listener();
   if (sockfd == -1) {

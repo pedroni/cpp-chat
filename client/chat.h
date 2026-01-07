@@ -11,6 +11,7 @@
 #include <vector>
 
 using namespace std;
+using namespace std::chrono;
 
 #define HOST "localhost"
 #define PORT "3490"
@@ -24,8 +25,14 @@ private:
   vector<string> _messages;
 
   int _sockfd = -1;
+  long long _connectionAttemptedAt = -1;
 
-  bool connect();
+  // used to prevent connecting more than once at the same time
+  bool _shouldReconnect = false;
+
+  bool _connect();
+  void _disconnect();
+  void _reconnect();
 
 public:
   string input;
