@@ -16,16 +16,56 @@ void subscribe(Chat &chat) {
 }
 
 void readInput(Chat &chat) {
+  int rawCh;
   while (chat.isRunning()) {
-    chat.currentCh = getch();
+    rawCh = getch();
 
-    switch ((int)chat.currentCh) {
+    chat.currentCh = rawCh;
+    switch (chat.currentCh) {
+
+    case 127:
+      chat.input.pop_back();
+      break;
     case 10:
       chat.handleInput();
       chat.input = "";
       break;
+    case 23: {
+      // important. to compare the last character in C
+      // you check a char against ' ' (single quotes) also note that this is
+      // simply char not char * (which would be pointer)
+      // ' ' single quotes is a single character value, whereas " " is a string
+      // literal that is a pointer! because it not only contains the space
+      // character but also contain the null delimiter at the end \0 so it would
+      // be " \0" and in that case you'd have to test using strcmp, and that
+      // also returns a pointer
+
+      while (chat.input.back() == ' ') {
+        // dont pop back when empty, this has undefined behaviour
+        if (chat.input.empty()) {
+          break;
+        }
+
+        chat.input.pop_back();
+      }
+
+      while (chat.input.back() != ' ') {
+        if (chat.input.empty()) {
+          break;
+        }
+
+        chat.input.pop_back();
+      }
+
+      break;
+    }
     default:
-      chat.input += chat.currentCh;
+      // todo: handle special combos shift,ctrl,meta,super whatelse...
+      // this is print prevents printing but we need to support those actions
+      // though. even going left from right to better handle typing
+      if (isprint(chat.currentCh)) {
+        chat.input += chat.currentCh;
+      }
       break;
     }
   }

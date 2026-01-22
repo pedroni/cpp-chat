@@ -6,6 +6,7 @@
 #include <cstring>
 #include <fmt/format.h>
 #include <fmt/printf.h>
+#include <mutex>
 #include <ncurses.h>
 #include <string>
 #include <sys/socket.h>
@@ -44,6 +45,11 @@ std::string inet_ntop2(void *addr) {
 bool Chat::_connect() {
   int tempSockFd;
   _connectionAttemptedAt = TimeUtil::now();
+  unique_lock<mutex> lock = unique_lock<mutex>(connectionLock);
+
+  if (_sockfd != -1) {
+    return true; // already connected
+  }
 
   struct addrinfo hints, *servinfo, *p;
   memset(&hints, 0, sizeof hints);
@@ -119,6 +125,9 @@ void Chat::render() const {
   if (Chat::_username == "") {
     printw("How can we call you?\n");
   } else {
+    // todo: rendering messages need to be added to like a virtual container so
+    // we can scroll through them. currently if there are to many messages it
+    // glitches out
     renderMessages();
   }
 
@@ -171,29 +180,37 @@ void Chat::restart() {
 
 void Chat::sendMessage(string message) {
   string newMessage = fmt::sprintf("%s: %s", _username, message);
-  _messages.push_back(newMessage);
 
+  // todo: wait 5 seconds before retrying to send the message, here it tries
+  // instantly. that doesnt make sense, the reconnection attempts every 5
+  // seconds, so the resending of the message should also be after 5 seconds
   if (send(_sockfd, newMessage.c_str(), newMessage.size(), 0) == -1) {
-    _reconnect();
+    _disconnect();
     _messages.push_back(fmt::sprintf(
         "failed to send message %s... reconnecting...", strerror(errno)));
+  } else {
+    _messages.push_back(newMessage);
   }
 }
 
 // reconnect every 5 seconds
-void Chat::_reconnect() {
+bool Chat::_reconnect() {
+  if (!_shouldReconnect) {
+    return false;
+  }
+
   if (_username == "") {
     // only attempt to reconnect with a user
-    return;
+    return false;
   }
+
   long long now = TimeUtil::now();
 
-  if (_connectionAttemptedAt == -1 || (now - _connectionAttemptedAt >= 5000)) {
-    _disconnect();
-
+  if ((now - _connectionAttemptedAt >= 5000)) {
     _messages.push_back(("Trying to reconnect..."));
-    _connect();
+    return _connect();
   }
+  return false;
 }
 
 void Chat::subscribe() {
@@ -205,9 +222,7 @@ void Chat::subscribe() {
   char buf[256];
   int numBytes = recv(_sockfd, buf, 256, 0);
   if (numBytes == -1) {
-    _messages.push_back(
-        fmt::sprintf("failed to recv message %s", strerror(errno)));
-    _reconnect();
+    _disconnect();
     return;
   }
 

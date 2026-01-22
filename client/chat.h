@@ -24,6 +24,8 @@ private:
   vector<string> _welcomeMessages;
   vector<string> _messages;
 
+  mutex connectionLock;
+
   int _sockfd = -1;
   long long _connectionAttemptedAt = -1;
 
@@ -32,7 +34,7 @@ private:
 
   bool _connect();
   void _disconnect();
-  void _reconnect();
+  bool _reconnect();
 
 public:
   string input;
